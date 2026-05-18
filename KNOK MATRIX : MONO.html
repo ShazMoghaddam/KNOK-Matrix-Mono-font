@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KNOK Matrix / Mono — Typographic System</title>
+    <style>
+        /* ==========================================
+           GLOBAL DESIGN VARIABLE PALETTES
+           ========================================== */
+        :root {
+            /* Canvas & Structural Settings */
+            --bg-canvas: #f6f5f0;
+            --color-text: #1a1a1a;
+            
+            /* The 11 exact custom colors integrated directly */
+            --color-mint: #2FA084;
+            --color-ultramarine: #3852B4;
+            --color-deepgreen: #285A48;
+            --color-royalfall: #2845D6;
+            --color-amethyst: #B153D7;
+            --color-purered: #FF0000;
+            --color-cornflower: #5A7ACD;
+            --color-vibrantyellow: #FFCC00;
+            --color-slate: #7F8CAA;
+            --color-safetyorange: #FF6500;
+            --color-hotpink: #FF4B91;
+
+            /* Visual mappings ensuring harmonious distribution */
+            --c1: var(--color-royalfall);
+            --c2: var(--color-safetyorange);
+            --c3: var(--color-mint);
+            --c4: var(--color-vibrantyellow);
+            --c5: var(--color-amethyst);
+            --c6: var(--color-hotpink);
+            --c7: var(--color-deepgreen);
+
+            --blend-mode: multiply;
+            --card-bg: rgba(255, 255, 255, 0.45);
+            --card-border: rgba(0, 0, 0, 0.08);
+        }
+
+        [data-theme="neon"] {
+            /* Dark Mode Gallery Adaptation */
+            --bg-canvas: #0b0c10;
+            --color-text: #ffffff;
+            
+            --c1: var(--color-hotpink);
+            --c2: var(--color-vibrantyellow);
+            --c3: var(--color-mint);
+            --c4: var(--color-royalfall);
+            --c5: var(--color-amethyst);
+            --c6: var(--color-safetyorange);
+            --c7: var(--color-cornflower);
+
+            --blend-mode: screen; /* Smooth light blending on dark viewports */
+            --card-bg: rgba(255, 255, 255, 0.04);
+            --card-border: rgba(255, 255, 255, 0.1);
+        }
+
+        /* ==========================================
+           CORE INTERFACE LAYOUT
+           ========================================== */
+        body {
+            background-color: var(--bg-canvas);
+            color: var(--color-text);
+            margin: 0;
+            padding: 40px 20px 20px 20px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            transition: background-color 0.4s ease, color 0.4s ease;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+            flex: 1;
+            width: 100%;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        header h1 {
+            font-size: 2.6rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: -0.5px;
+            margin-bottom: 4px;
+        }
+
+        header p {
+            font-size: 0.95rem;
+            opacity: 0.6;
+            margin-top: 0;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 50px;
+        }
+
+        .btn {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            color: var(--color-text);
+            padding: 10px 24px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.85rem;
+            transition: all 0.2s ease;
+        }
+
+        .btn:hover, .btn.active {
+            background: var(--color-text);
+            color: var(--bg-canvas);
+        }
+
+        /* Real-Time Clock Interface Box */
+        .clock-section {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 35px 20px;
+            margin-bottom: 60px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.02);
+        }
+
+        .clock-title {
+            text-align: center;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-bottom: 25px;
+            font-weight: 700;
+            opacity: 0.5;
+        }
+
+        .clock-display {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 16px;
+            max-width: 950px;
+            margin: 0 auto;
+        }
+
+        /* Fixed container dimensions assuring complete geometric control */
+        .clock-digit-box {
+            width: 11%;
+            max-width: 90px;
+            aspect-ratio: 5 / 7;
+            background: rgba(0, 0, 0, 0.02);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .clock-separator {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 16px;
+            height: 100%;
+        }
+
+        .clock-dot {
+            width: 12px;
+            height: 12px;
+            background-color: var(--color-purered);
+            border-radius: 50%;
+            animation: pulse 1s infinite alternate;
+        }
+
+        @keyframes pulse {
+            from { opacity: 0.2; }
+            to { opacity: 1; }
+        }
+
+        /* Matrix Presentation Layout */
+        .section-title {
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid var(--card-border);
+            padding-bottom: 12px;
+            font-weight: 700;
+        }
+
+        .digits-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 24px;
+        }
+
+        @media (max-width: 950px) {
+            .digits-grid { grid-template-columns: repeat(3, 1fr); }
+        }
+        @media (max-width: 600px) {
+            .digits-grid { grid-template-columns: repeat(2, 1fr); }
+            .clock-display { gap: 8px; }
+            .clock-dot { width: 8px; height: 8px; }
+        }
+
+        .digit-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .digit-card:hover {
+            transform: translateY(-4px);
+        }
+
+        /* Enforced sizing constraints across the design system index */
+        .art-digit-wrapper {
+            width: 100%;
+            max-width: 160px;
+            aspect-ratio: 5 / 7;
+            display: block;
+        }
+
+        .digit-label {
+            margin-top: 16px;
+            font-weight: 700;
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+            opacity: 0.4;
+        }
+
+        /* ==========================================
+           FOOTER DESIGN CREDIT BLOCK
+           ========================================== */
+        footer {
+            margin-top: 60px;
+            padding-top: 20px;
+            border-top: 1px solid var(--card-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.75rem;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            opacity: 0.5;
+            font-weight: 600;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        footer .footer-links a {
+            color: var(--color-text);
+            text-decoration: none;
+            margin-left: 15px;
+            border-bottom: 1px solid transparent;
+            transition: border-color 0.2s;
+        }
+
+        footer .footer-links a:hover {
+            border-bottom-color: var(--color-text);
+        }
+
+        /* ==========================================
+           SVG ARTWORK ENGINE (Strict 500x700 Scaling)
+           ========================================== */
+        .art-digit {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .art-digit path, 
+        .art-digit rect, 
+        .art-digit circle, 
+        .art-digit polygon {
+            mix-blend-mode: var(--blend-mode);
+            opacity: 0.95;
+            transition: mix-blend-mode 0.3s, fill 0.3s;
+        }
+
+        /* Context-aware dynamic cutout masking tool */
+        .art-digit .knockout {
+            mix-blend-mode: normal !important;
+            opacity: 1 !important;
+            fill: var(--bg-canvas) !important;
+            transition: fill 0.4s ease;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <header>
+        <h1>KNOK Matrix / Mono</h1>
+        <p>An Abstract Typographic Layout Engine</p>
+    </header>
+
+    <div class="controls">
+        <button class="btn active" onclick="setTheme('default', this)">Studio Light</button>
+        <button class="btn" onclick="setTheme('neon', this)">Gallery Dark</button>
+    </div>
+
+    <div class="clock-section">
+        <div class="clock-title">Synchronized Live Display</div>
+        <div class="clock-display">
+            <div class="clock-digit-box" id="h1"></div>
+            <div class="clock-digit-box" id="h2"></div>
+            <div class="clock-separator"><div class="clock-dot"></div><div class="clock-dot"></div></div>
+            <div class="clock-digit-box" id="m1"></div>
+            <div class="clock-digit-box" id="m2"></div>
+            <div class="clock-separator"><div class="clock-dot"></div><div class="clock-dot"></div></div>
+            <div class="clock-digit-box" id="s1"></div>
+            <div class="clock-digit-box" id="s2"></div>
+        </div>
+    </div>
+
+    <div class="section-title">System Index Architecture</div>
+
+    <div class="digits-grid">
+        <div class="digit-card"><div class="art-digit-wrapper" data-digit="0"></div><div class="digit-label">KNOK_0</div></div>
+        <div class="digit-card"><div class="art-digit-wrapper" data-digit="1"></div><div class="digit-label">KNOK_1</div></div>
+        <div class="digit-card"><div class="art-digit-wrapper" data-digit="2"></div><div class="digit-label">KNOK_2</div></div>
+        <div class="digit-card"><div class="art-digit-wrapper" data-digit="3"></div><div class="digit-label">KNOK_3</div></div>
+        <div class="digit-card"><div class="art-digit-wrapper" data-digit="4"></div><div class="digit-label">KNOK_4</div></div>
+        <div class="digit-card"><div class="art-digit-wrapper" data-digit="5"></div><div class="digit-label">KNOK_5</div></div>
+        <div class="digit-card"><div class="art-digit-wrapper" data-digit="6"></div><div class="digit-label">KNOK_6</div></div>
+        <div class="digit-card"><div class="art-digit-wrapper" data-digit="7"></div><div class="digit-label">KNOK_7</div></div>
+        <div class="digit-card"><div class="art-digit-wrapper" data-digit="8"></div><div class="digit-label">KNOK_8</div></div>
+        <div class="digit-card"><div class="art-digit-wrapper" data-digit="9"></div><div class="digit-label">KNOK_9</div></div>
+    </div>
+
+    <footer>
+        <div>System Configuration: v1.1.0 // London, UK</div>
+        <div>Designed by Shaz Moghaddam</div>
+        <div class="footer-links">
+            <a href="https://shazmoghaddam.github.io/" target="_blank" rel="noopener">Portfolio</a>
+            <a href="https://www.linkedin.com/in/shazmoghaddam/" target="_blank" rel="noopener">LinkedIn</a>
+        </div>
+    </footer>
+
+</div>
+
+<template id="digit-templates">
+    <svg class="art-digit" viewBox="0 0 500 700" xmlns="http://www.w3.org/2000/svg">
+        <path d="M 250,140 C 360,140 410,210 410,350 C 410,490 360,560 250,560 C 140,560 90,490 90,350 C 90,210 140,140 250,140 Z" fill="var(--c4)" />
+        <path d="M 250,225 C 310,225 330,260 330,350 C 330,440 310,475 250,475 C 190,475 170,440 170,350 C 170,260 190,225 250,225 Z" class="knockout" />
+        <rect x="90" y="230" width="55" height="240" fill="var(--c1)" />
+    </svg>
+    <svg class="art-digit" viewBox="0 0 500 700" xmlns="http://www.w3.org/2000/svg">
+        <rect x="210" y="150" width="80" height="430" fill="var(--c1)" />
+        <rect x="150" y="150" width="160" height="60" fill="var(--color-purered)" />
+        <polygon points="210,150 250,100 290,150 250,200" fill="var(--c2)" />
+    </svg>
+    <svg class="art-digit" viewBox="0 0 500 700" xmlns="http://www.w3.org/2000/svg">
+        <path d="M 420,250 A 110,110 0 0,0 120,280" fill="none" stroke="var(--c3)" stroke-width="80" stroke-linecap="square"/>
+        <polygon points="390,260 100,580 190,580 430,300" fill="var(--c2)" />
+        <rect x="90" y="520" width="320" height="70" fill="var(--c6)" />
+    </svg>
+    <svg class="art-digit" viewBox="0 0 500 700" xmlns="http://www.w3.org/2000/svg">
+        <path d="M 150,160 L 390,160 L 260,350" fill="none" stroke="var(--color-purered)" stroke-width="70" stroke-linejoin="miter" stroke-miterlimit="4"/>
+        <path d="M 240,330 A 125,125 0 1,1 150,540" fill="none" stroke="var(--c4)" stroke-width="80" />
+        <rect x="230" y="315" width="120" height="60" fill="var(--c1)" />
+    </svg>
+    <svg class="art-digit" viewBox="0 0 500 700" xmlns="http://www.w3.org/2000/svg">
+        <polygon points="340,550 340,130 90,450" fill="none" stroke="var(--c2)" stroke-width="75" stroke-linecap="square" stroke-linejoin="miter" />
+        <rect x="50" y="400" width="400" height="75" fill="var(--c6)" />
+        <rect x="302" y="250" width="76" height="330" fill="var(--c1)" />
+    </svg>
+    <svg class="art-digit" viewBox="0 0 500 700" xmlns="http://www.w3.org/2000/svg">
+        <rect x="130" y="150" width="260" height="70" fill="var(--color-purered)" />
+        <rect x="130" y="150" width="70" height="200" fill="var(--c7)" />
+        <path d="M 150,330 L 340,330 A 120,120 0 1,1 120,500" fill="none" stroke="var(--c2)" stroke-width="80" stroke-linecap="square" />
+    </svg>
+    <svg class="art-digit" viewBox="0 0 500 700" xmlns="http://www.w3.org/2000/svg">
+        <path d="M 370,180 A 140,140 0 0,0 120,450" fill="none" stroke="var(--c1)" stroke-width="80" />
+        <circle cx="270" cy="460" r="140" fill="var(--c3)" />
+        <circle cx="270" cy="460" r="60" class="knockout" />
+        <polygon points="320,130 140,400 200,450 380,180" fill="var(--c6)" />
+    </svg>
+    <svg class="art-digit" viewBox="0 0 500 700" xmlns="http://www.w3.org/2000/svg">
+        <rect x="100" y="140" width="300" height="75" fill="var(--c6)" />
+        <polygon points="360,140 410,140 220,580 170,580" fill="var(--c2)" />
+        <rect x="160" y="320" width="180" height="60" fill="var(--c4)" />
+    </svg>
+    <svg class="art-digit" viewBox="0 0 500 700" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="250" cy="260" r="115" fill="var(--c3)" />
+        <circle cx="250" cy="260" r="45" class="knockout" />
+        <circle cx="250" cy="460" r="140" fill="var(--c6)" />
+        <circle cx="250" cy="460" r="60" class="knockout" />
+        <rect x="150" y="335" width="200" height="50" fill="var(--color-purered)" />
+    </svg>
+    <svg class="art-digit" viewBox="0 0 500 700" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="230" cy="250" r="135" fill="var(--c3)" />
+        <circle cx="230" cy="250" r="55" class="knockout" />
+        <polygon points="325,220 370,220 260,560 215,560" fill="var(--c2)" />
+        <rect x="160" y="115" width="230" height="60" fill="var(--c6)" />
+    </svg>
+</template>
+
+<script>
+    const templateNode = document.getElementById('digit-templates');
+    const svgTemplates = Array.from(templateNode.content.querySelectorAll('.art-digit'));
+
+    let currentClockStrings = { h1: '', h2: '', m1: '', m2: '', s1: '', s2: '' };
+
+    function initSystem() {
+        document.querySelectorAll('.art-digit-wrapper').forEach(wrapper => {
+            const digitIndex = parseInt(wrapper.getAttribute('data-digit'), 10);
+            wrapper.appendChild(svgTemplates[digitIndex].cloneNode(true));
+        });
+
+        updateClock();
+        setInterval(updateClock, 1000);
+    }
+
+    function updateClock() {
+        const time = new Date();
+        const h = String(time.getHours()).padStart(2, '0');
+        const m = String(time.getMinutes()).padStart(2, '0');
+        const s = String(time.getSeconds()).padStart(2, '0');
+
+        syncSlot('h1', h[0]);
+        syncSlot('h2', h[1]);
+        syncSlot('m1', m[0]);
+        syncSlot('m2', m[1]);
+        syncSlot('s1', s[0]);
+        syncSlot('s2', s[1]);
+    }
+
+    function syncSlot(slotId, digitValue) {
+        if (currentClockStrings[slotId] !== digitValue) {
+            currentClockStrings[slotId] = digitValue;
+            const container = document.getElementById(slotId);
+            container.innerHTML = ''; 
+            container.appendChild(svgTemplates[parseInt(digitValue, 10)].cloneNode(true));
+        }
+    }
+
+    function setTheme(themeName, element) {
+        if (themeName === 'default') {
+            document.documentElement.removeAttribute('data-theme');
+        } else {
+            document.documentElement.setAttribute('data-theme', themeName);
+        }
+        
+        document.querySelectorAll('.controls .btn').forEach(btn => btn.classList.remove('active'));
+        element.classList.add('active');
+    }
+
+    window.addEventListener('DOMContentLoaded', initSystem);
+</script>
+
+</body>
+</html>
