@@ -4,7 +4,7 @@
 
 [![Live Demo](https://img.shields.io/badge/demo-online-brightgreen)](https://shazmoghaddam.github.io/)
 [![Version](https://img.shields.io/badge/version-1.1.0-blue)](#)
-[![Licence: CC BY 4.0](https://img.shields.io/badge/Licence-CC%20BY%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)
+[![Licence: MIT](https://img.shields.io/badge/Licence-MIT-lightgrey.svg)](./LICENSE)
 
 [🔗 LinkedIn](https://www.linkedin.com/in/shazmoghaddam/) &nbsp;|&nbsp; [🌐 Portfolio](https://shazmoghaddam.github.io/)
 
@@ -162,7 +162,7 @@ Clock separator dots and digit box sizing compress proportionally on small viewp
 ```
 KNOK_MATRIX___MONO.html   ← entire system in one file
 README.md
-LICENSE.txt
+LICENSE
 ```
 
 No build step. No package manager. No dependencies.
@@ -193,11 +193,7 @@ JS ES6     — cloneNode, setInterval, visibilitychange, string diffing
 
 ## Licence
 
-This project is licensed under the **Creative Commons Attribution 4.0 International (CC BY 4.0)**.
-
-You are free to share and adapt this work for any purpose, including commercially, as long as you give appropriate credit to **Shaz Moghaddam** and indicate if changes were made.
-
-[View full licence →](./LICENSE.txt) &nbsp;|&nbsp; [creativecommons.org/licenses/by/4.0](https://creativecommons.org/licenses/by/4.0/)
+Released under the [MIT licence](./LICENSE). Free to use, change and share, including commercially, as long as the licence and copyright notice stay with it.
 
 ---
 
