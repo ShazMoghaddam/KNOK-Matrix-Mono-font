@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KNOK Matrix / Mono</title>
+    <meta name="description" content="KNOK Matrix / Mono: ten digits built from pure geometric SVG, shown as a design index and a live clock. One HTML file, no dependencies. By Shaz Moghaddam, London.">
+    <meta name="author" content="Shaz Moghaddam">
+    <meta name="color-scheme" content="light dark">
+    <meta name="theme-color" content="#f6f5f0" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#0b0c10" media="(prefers-color-scheme: dark)">
+
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="KNOK Matrix / Mono">
+    <meta property="og:description" content="Ten digits built from pure geometric SVG, shown as a design index and a live clock.">
+    <meta property="og:url" content="https://shazmoghaddam.github.io/knok-matrix/">
+    <meta property="og:image" content="https://shazmoghaddam.github.io/knok-matrix/assets/social-preview.png">
+    <meta property="og:image:width" content="1280">
+    <meta property="og:image:height" content="640">
+    <meta name="twitter:card" content="summary_large_image">
+
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23f6f5f0'/%3E%3Ccircle cx='50' cy='50' r='32' fill='%23FFCC00'/%3E%3Ccircle cx='50' cy='50' r='14' fill='%23f6f5f0'/%3E%3Crect x='18' y='30' width='13' height='40' fill='%232845D6'/%3E%3C/svg%3E">
+
+    <script>
+        /* Apply the saved or system theme before first paint, so there is no flash */
+        (function () {
+            var saved = null;
+            try { saved = localStorage.getItem('knok-theme'); } catch (e) {}
+            var dark = saved ? saved === 'dark'
+                             : window.matchMedia('(prefers-color-scheme: dark)').matches;
+            if (dark) document.documentElement.setAttribute('data-theme', 'dark');
+        })();
+    </script>
+
+    <style>
+        /* ==========================================
+           PALETTE
+           ========================================== */
+        :root {
+            --bg-canvas: #f6f5f0;
+            --surface: #fbfaf7;          /* cards: solid, so knockouts match exactly */
+            --surface-sunk: #f1efe8;     /* clock digit boxes */
+            --color-text: #1a1a1a;
+            --text-muted: #5c5b57;
+            --border: rgba(0, 0, 0, 0.09);
+            --focus: #2845D6;
+
+            /* The 11 named colours */
+            --color-mint: #2FA084;
+            --color-ultramarine: #3852B4;
+            --color-deepgreen: #285A48;
+            --color-royalfall: #2845D6;
+            --color-amethyst: #B153D7;
+            --color-purered: #FF0000;
+            --color-cornflower: #5A7ACD;
+            --color-vibrantyellow: #FFCC00;
+            --color-slate: #7F8CAA;
+            --color-safetyorange: #FF6500;
+            --color-hotpink: #FF4B91;
+
+            /* Slot colours used by the glyphs */
+            --c1: var(--color-royalfall);
+            --c2: var(--color-safetyorange);
+            --c3: var(--color-mint);
+            --c4: var(--color-vibrantyellow);
+            --c5: var(--color-amethyst);
+            --c6: var(--color-hotpink);
+            --c7: var(--color-deepgreen);
+
+            --blend-mode: multiply;
+            --knockout: var(--bg-canvas);
+        }
+
+        /* Scoped to <html> so the theme buttons never pick these up */
+        html[data-theme="dark"] {
+            --bg-canvas: #0b0c10;
+            --surface: #13141a;
+            --surface-sunk: #0f1015;
+            --color-text: #f4f4f5;
+            --text-muted: #a3a3ad;
+            --border: rgba(255, 255, 255, 0.1);
+            --focus: #FFCC00;
+
+            --c1: var(--color-hotpink);
+            --c2: var(--color-vibrantyellow);
+            --c3: var(--color-mint);
+            --c4: var(--color-royalfall);
+            --c5: var(--color-amethyst);
+            --c6: var(--color-safetyorange);
+            --c7: var(--color-cornflower);
+
+            --blend-mode: screen;
+        }
+
+        /* ==========================================
+           LAYOUT
+           ========================================== */
+        *, *::before, *::after { box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-canvas);
+            color: var(--color-text);
+            margin: 0;
+            padding: clamp(24px, 5vw, 48px) clamp(16px, 4vw, 32px) 24px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            transition: background-color 0.4s ease, color 0.4s ease;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+            flex: 1;
+            width: 100%;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: clamp(24px, 4vw, 40px);
+        }
+
+        header h1 {
+            font-size: clamp(1.9rem, 6vw, 2.6rem);
+            line-height: 1.05;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: -0.5px;
+            margin: 0 0 10px;
+        }
+
+        header p {
+            font-size: clamp(0.78rem, 2.4vw, 0.95rem);
+            color: var(--text-muted);
+            margin: 0;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        /* Segmented controls: theme + clock format */
+        .controls {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: clamp(28px, 5vw, 50px);
+        }
+
+        .segmented {
+            display: inline-flex;
+            padding: 4px;
+            gap: 4px;
+            border-radius: 999px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+        }
+
+        .btn {
+            background: transparent;
+            border: 0;
+            color: var(--color-text);
+            padding: 9px 18px;
+            min-height: 36px;
+            border-radius: 999px;
+            cursor: pointer;
+            font: inherit;
+            font-weight: 600;
+            font-size: 0.85rem;
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+
+        .btn:hover { background: var(--border); }
+
+        .btn[aria-pressed="true"] {
+            background: var(--color-text);
+            color: var(--bg-canvas);
+        }
+
+        :focus-visible {
+            outline: 2px solid var(--focus);
+            outline-offset: 3px;
+        }
+
+        /* ==========================================
+           LIVE CLOCK
+           ========================================== */
+        .clock-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: clamp(20px, 4vw, 35px) clamp(12px, 3vw, 20px);
+            margin-bottom: clamp(36px, 6vw, 60px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.03);
+        }
+
+        .clock-title {
+            text-align: center;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin: 0 0 clamp(16px, 3vw, 25px);
+            font-weight: 700;
+            color: var(--text-muted);
+        }
+
+        .clock-display {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: clamp(4px, 1.4vw, 16px);
+            max-width: 820px;
+            margin: 0 auto;
+        }
+
+        .clock-digit-box {
+            --knockout: var(--surface-sunk);
+            flex: 1 1 0;
+            min-width: 0;
+            max-width: 100px;
+            aspect-ratio: 5 / 7;
+            background: var(--surface-sunk);
+            border-radius: 8px;
+            transition: background-color 0.4s ease;
+        }
+
+        /* 12-hour mode: an hour below 10 shows one digit, like a real clock face */
+        .clock-digit-box.is-blank .art-digit { visibility: hidden; }
+
+        .clock-separator {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: clamp(8px, 2vw, 16px);
+            flex: 0 0 auto;
+        }
+
+        .clock-dot {
+            width: clamp(6px, 1.4vw, 12px);
+            height: clamp(6px, 1.4vw, 12px);
+            background-color: var(--color-purered);
+            border-radius: 50%;
+            animation: pulse 1s infinite alternate;
+        }
+
+        .clock-meridiem {
+            flex: 0 0 auto;
+            align-self: flex-end;
+            font-size: clamp(0.7rem, 2vw, 0.95rem);
+            font-weight: 800;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            padding-bottom: 4px;
+        }
+        .clock-meridiem[hidden] { display: none; }
+
+        @keyframes pulse {
+            from { opacity: 0.2; }
+            to   { opacity: 1; }
+        }
+
+        /* ==========================================
+           DESIGN INDEX
+           ========================================== */
+        .section-title {
+            font-size: clamp(0.95rem, 2.6vw, 1.1rem);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin: 0 0 clamp(18px, 3vw, 30px);
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 12px;
+            font-weight: 700;
+        }
+
+        .digits-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: clamp(12px, 2vw, 24px);
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        @media (max-width: 950px) {
+            .digits-grid { grid-template-columns: repeat(3, 1fr); }
+        }
+        @media (max-width: 600px) {
+            .digits-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        .digit-card {
+            --knockout: var(--surface);
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: clamp(14px, 3vw, 20px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.4s ease;
+        }
+
+        .digit-card:hover { transform: translateY(-4px); }
+
+        .art-digit-wrapper {
+            width: 100%;
+            max-width: 160px;
+            aspect-ratio: 5 / 7;
+            display: block;
+        }
+
+        .digit-label {
+            margin-top: 12px;
+            font-weight: 700;
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        }
+
+        /* ==========================================
+           FOOTER
+           ========================================== */
+        footer {
+            margin-top: 60px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.75rem;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            font-weight: 600;
+            flex-wrap: wrap;
+            gap: 12px 24px;
+            color: var(--text-muted);
+        }
+
+        footer nav { display: flex; gap: 18px; flex-wrap: wrap; }
+
+        footer a {
+            color: var(--color-text);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: border-color 0.2s ease;
+        }
+
+        footer a:hover { border-bottom-color: var(--color-text); }
+
+        @media (max-width: 600px) {
+            footer { flex-direction: column; align-items: flex-start; }
+        }
+
+        /* ==========================================
+           SVG ARTWORK (500 x 700 viewBox)
+           ========================================== */
+        .art-digit {
+            width: 100%;
+            height: 100%;
+            display: block;
+            overflow: visible;          /* sharp mitres (like the 4) can reach past the box */
+        }
+
+        .art-digit path,
+        .art-digit rect,
+        .art-digit circle,
+        .art-digit polygon {
+            mix-blend-mode: var(--blend-mode);
+            opacity: 0.95;
+            transition: fill 0.3s ease;
+        }
+
+        /* Knockouts take the colour of whatever surface they sit on */
+        .art-digit .knockout {
+            mix-blend-mode: normal !important;
+            opacity: 1 !important;
+            fill: var(--knockout) !important;
+            transition: fill 0.4s ease;
+        }
+
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .clock-dot { animation: none; opacity: 0.7; }
+            .digit-card, .digit-card:hover { transition: none; transform: none; }
+            body, .btn { transition: none; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <header>
+        <h1>KNOK Matrix / Mono</h1>
+        <p>An Abstract Typographic Layout Engine</p>
+    </header>
+
+    <div class="controls">
+        <div class="segmented" role="group" aria-label="Theme">
+            <button type="button" class="btn" data-theme-choice="light" aria-pressed="true">Studio Light</button>
+            <button type="button" class="btn" data-theme-choice="dark" aria-pressed="false">Gallery Dark</button>
+        </div>
+        <div class="segmented" role="group" aria-label="Clock format">
+            <button type="button" class="btn" data-format-choice="24" aria-pressed="true">24h</button>
+            <button type="button" class="btn" data-format-choice="12" aria-pressed="false">12h</button>
+        </div>
+    </div>
+
+    <main id="main-content">
+
+        <section class="clock-section" aria-labelledby="clock-heading">
+            <h2 class="clock-title" id="clock-heading">Synchronised Live Display</h2>
+            <!-- Screen readers get the time as text. Not a live region: announcing every second would drown out everything else. -->
+            <p class="sr-only"><time id="clock-accessible"></time></p>
+            <div class="clock-display" aria-hidden="true">
+                <div class="clock-digit-box" id="h1"></div>
+                <div class="clock-digit-box" id="h2"></div>
+                <div class="clock-separator"><div class="clock-dot"></div><div class="clock-dot"></div></div>
+                <div class="clock-digit-box" id="m1"></div>
+                <div class="clock-digit-box" id="m2"></div>
+                <div class="clock-separator"><div class="clock-dot"></div><div class="clock-dot"></div></div>
+                <div class="clock-digit-box" id="s1"></div>
+                <div class="clock-digit-box" id="s2"></div>
+                <span class="clock-meridiem" id="meridiem" hidden></span>
+            </div>
+        </section>
+
+        <h2 class="section-title">System Index Architecture</h2>
+
+        <ul class="digits-grid">
+            <li class="digit-card"><div class="art-digit-wrapper" data-digit="0"></div><div class="digit-label">KNOK_0</div></li>
+            <li class="digit-card"><div class="art-digit-wrapper" data-digit="1"></div><div class="digit-label">KNOK_1</div></li>
+            <li class="digit-card"><div class="art-digit-wrapper" data-digit="2"></div><div class="digit-label">KNOK_2</div></li>
+            <li class="digit-card"><div class="art-digit-wrapper" data-digit="3"></div><div class="digit-label">KNOK_3</div></li>
+            <li class="digit-card"><div class="art-digit-wrapper" data-digit="4"></div><div class="digit-label">KNOK_4</div></li>
+            <li class="digit-card"><div class="art-digit-wrapper" data-digit="5"></div><div class="digit-label">KNOK_5</div></li>
+            <li class="digit-card"><div class="art-digit-wrapper" data-digit="6"></div><div class="digit-label">KNOK_6</div></li>
+            <li class="digit-card"><div class="art-digit-wrapper" data-digit="7"></div><div class="digit-label">KNOK_7</div></li>
+            <li class="digit-card"><div class="art-digit-wrapper" data-digit="8"></div><div class="digit-label">KNOK_8</div></li>
+            <li class="digit-card"><div class="art-digit-wrapper" data-digit="9"></div><div class="digit-label">KNOK_9</div></li>
+        </ul>
+
+    </main>
+
+    <footer>
+        <div>v1.2.0 · Designed by Shaz Moghaddam · London</div>
+        <nav aria-label="Footer links">
+            <a href="https://shazmoghaddam.github.io/" target="_blank" rel="noopener noreferrer">Website</a>
+            <a href="https://www.linkedin.com/in/shazmoghaddam/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+            <a href="https://github.com/ShazMoghaddam/knok-matrix" target="_blank" rel="noopener noreferrer">Source</a>
+        </nav>
+    </footer>
+
+</div>
+
+<template id="digit-templates">
+    <svg class="art-digit" viewBox="0 0 500 700" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="KNOK digit 0, geometric artwork">
+        <path d="M 250,140 C 360,140 410,210 410,350 C 410,490 360,560 250,560 C 140,560 90,490 90,350 C 90,210 140,140 250,140 Z" fill="var(--c4)" />
+        <path d="M 250,225 C 310,225 330,260 330,350 C 330,440 310,475 250,475 C 190,475 170,440 170,350 C 170,260 190,225 250,225 Z" class="knockout" />
+        <rect x="90" y="230" width="55" height="240" fill="var(--c1)" />
+    </svg>
+    <svg class="art-digit" viewBox="0 0 500 700" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="KNOK digit 1, geometric artwork">
+        <rect x="210" y="150" width="80" height="430" fill="var(--c1)" />
+        <rect x="150" y="150" width="160" height="60" fill="var(--color-purered)" />
+        <polygon points="210,150 250,100 290,150 250,200" fill="var(--c2)" />
+    </svg>
+    <svg class="art-digit" viewBox="0 0 500 700" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="KNOK digit 2, geometric artwork">
+        <path d="M 420,250 A 110,110 0 0,0 120,280" fill="none" stroke="var(--c3)" stroke-width="80" stroke-linecap="square"/>
+        <polygon points="390,260 100,580 190,580 430,300" fill="var(--c2)" />
+        <rect x="90" y="520" width="320" height="70" fill="var(--c6)" />
+    </svg>
+    <svg class="art-digit" viewBox="0 0 500 700" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="KNOK digit 3, geometric artwork">
+        <path d="M 150,160 L 390,160 L 260,350" fill="none" stroke="var(--color-purered)" stroke-width="70" stroke-linejoin="miter" stroke-miterlimit="4"/>
+        <path d="M 240,330 A 125,125 0 1,1 150,540" fill="none" stroke="var(--c4)" stroke-width="80" />
+        <rect x="230" y="315" width="120" height="60" fill="var(--c1)" />
+    </svg>
+    <svg class="art-digit" viewBox="0 0 500 700" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="KNOK digit 4, geometric artwork">
+        <polygon points="340,550 340,130 90,450" fill="none" stroke="var(--c2)" stroke-width="75" stroke-linecap="square" stroke-linejoin="miter" />
+        <rect x="50" y="400" width="400" height="75" fill="var(--c6)" />
+        <rect x="302" y="250" width="76" height="330" fill="var(--c1)" />
+    </svg>
+    <svg class="art-digit" viewBox="0 0 500 700" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="KNOK digit 5, geometric artwork">
+        <rect x="130" y="150" width="260" height="70" fill="var(--color-purered)" />
+        <rect x="130" y="150" width="70" height="200" fill="var(--c7)" />
+        <path d="M 150,330 L 340,330 A 120,120 0 1,1 120,500" fill="none" stroke="var(--c2)" stroke-width="80" stroke-linecap="square" />
+    </svg>
+    <svg class="art-digit" viewBox="0 0 500 700" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="KNOK digit 6, geometric artwork">
+        <path d="M 370,180 A 140,140 0 0,0 120,450" fill="none" stroke="var(--c1)" stroke-width="80" />
+        <circle cx="270" cy="460" r="140" fill="var(--c3)" />
+        <circle cx="270" cy="460" r="60" class="knockout" />
+        <polygon points="320,130 140,400 200,450 380,180" fill="var(--c6)" />
+    </svg>
+    <svg class="art-digit" viewBox="0 0 500 700" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="KNOK digit 7, geometric artwork">
+        <rect x="100" y="140" width="300" height="75" fill="var(--c6)" />
+        <polygon points="360,140 410,140 220,580 170,580" fill="var(--c2)" />
+        <rect x="160" y="320" width="180" height="60" fill="var(--c4)" />
+    </svg>
+    <svg class="art-digit" viewBox="0 0 500 700" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="KNOK digit 8, geometric artwork">
+        <circle cx="250" cy="260" r="115" fill="var(--c3)" />
+        <circle cx="250" cy="260" r="45" class="knockout" />
+        <circle cx="250" cy="460" r="140" fill="var(--c6)" />
+        <circle cx="250" cy="460" r="60" class="knockout" />
+        <rect x="150" y="335" width="200" height="50" fill="var(--color-purered)" />
+    </svg>
+    <svg class="art-digit" viewBox="0 0 500 700" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="KNOK digit 9, geometric artwork">
+        <circle cx="230" cy="250" r="135" fill="var(--c3)" />
+        <circle cx="230" cy="250" r="55" class="knockout" />
+        <polygon points="325,220 370,220 260,560 215,560" fill="var(--c2)" />
+        <rect x="160" y="115" width="230" height="60" fill="var(--c6)" />
+    </svg>
+</template>
+
+<script>
+    'use strict';
+
+    const svgTemplates = Array.from(
+        document.getElementById('digit-templates').content.querySelectorAll('.art-digit')
+    );
+
+    const SLOTS = ['h1', 'h2', 'm1', 'm2', 's1', 's2'];
+    const shown = {};             // last value drawn in each slot, so we only touch the DOM on change
+    let tickTimer = null;
+    let lastSpokenMinute = '';
+    let hourFormat = '24';
+
+    /* ── Storage (can throw in private windows, so always guarded) ── */
+    function load(key) {
+        try { return localStorage.getItem(key); } catch (e) { return null; }
+    }
+    function save(key, value) {
+        try { localStorage.setItem(key, value); } catch (e) { /* not essential */ }
+    }
+
+    /* ── Clock ─────────────────────────────────────────────────── */
+    function drawSlot(slotId, value) {
+        if (shown[slotId] === value) return;
+        shown[slotId] = value;
+        const box = document.getElementById(slotId);
+        const blank = value === ' ';
+        box.classList.toggle('is-blank', blank);
+        // A blank slot keeps a hidden "0" so the layout never shifts
+        box.replaceChildren(svgTemplates[blank ? 0 : Number(value)].cloneNode(true));
+    }
+
+    function updateClock() {
+        const now = new Date();
+        let hours = now.getHours();
+        let meridiem = '';
+
+        if (hourFormat === '12') {
+            meridiem = hours < 12 ? 'AM' : 'PM';
+            hours = hours % 12 || 12;
+        }
+
+        const h = hourFormat === '12'
+            ? String(hours).padStart(2, ' ')
+            : String(hours).padStart(2, '0');
+        const m = String(now.getMinutes()).padStart(2, '0');
+        const s = String(now.getSeconds()).padStart(2, '0');
+
+        drawSlot('h1', h[0]); drawSlot('h2', h[1]);
+        drawSlot('m1', m[0]); drawSlot('m2', m[1]);
+        drawSlot('s1', s[0]); drawSlot('s2', s[1]);
+
+        const mer = document.getElementById('meridiem');
+        mer.hidden = !meridiem;
+        mer.textContent = meridiem;
+
+        // Screen-reader text changes once a minute, not every second
+        const spoken = `${h.trim()}:${m}${meridiem ? ' ' + meridiem : ''}`;
+        if (spoken !== lastSpokenMinute) {
+            lastSpokenMinute = spoken;
+            const t = document.getElementById('clock-accessible');
+            t.textContent = `Current time ${spoken}`;
+            t.dateTime = `${String(now.getHours()).padStart(2, '0')}:${m}`;
+        }
+    }
+
+    // Tick on the real second boundary, so the display never lags the system clock
+    function scheduleTick() {
+        clearTimeout(tickTimer);
+        tickTimer = setTimeout(() => {
+            updateClock();
+            scheduleTick();
+        }, 1000 - (Date.now() % 1000) + 5);
+    }
+
+    function stopTick() {
+        clearTimeout(tickTimer);
+        tickTimer = null;
+    }
+
+    /* ── Toggles ───────────────────────────────────────────────── */
+    function pressOnly(selector, attr, value) {
+        document.querySelectorAll(selector).forEach(btn => {
+            btn.setAttribute('aria-pressed', String(btn.getAttribute(attr) === value));
+        });
+    }
+
+    function setTheme(theme, remember) {
+        if (theme === 'dark') {
+            document.documentElement.setAttribute('data-theme', 'dark');
+        } else {
+            document.documentElement.removeAttribute('data-theme');
+        }
+        pressOnly('[data-theme-choice]', 'data-theme-choice', theme);
+        if (remember) save('knok-theme', theme);
+    }
+
+    function setFormat(format, remember) {
+        hourFormat = format === '12' ? '12' : '24';
+        pressOnly('[data-format-choice]', 'data-format-choice', hourFormat);
+        if (remember) save('knok-format', hourFormat);
+        updateClock();
+    }
+
+    /* ── Boot ──────────────────────────────────────────────────── */
+    function init() {
+        document.querySelectorAll('.art-digit-wrapper').forEach(wrapper => {
+            wrapper.appendChild(svgTemplates[Number(wrapper.dataset.digit)].cloneNode(true));
+        });
+
+        document.querySelectorAll('[data-theme-choice]').forEach(btn => {
+            btn.addEventListener('click', () => setTheme(btn.dataset.themeChoice, true));
+        });
+        document.querySelectorAll('[data-format-choice]').forEach(btn => {
+            btn.addEventListener('click', () => setFormat(btn.dataset.formatChoice, true));
+        });
+
+        // Sync buttons with the theme the head script already applied
+        setTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light', false);
+
+        // Follow the system theme live, unless the visitor picked one
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+            if (!load('knok-theme')) setTheme(e.matches ? 'dark' : 'light', false);
+        });
+
+        setFormat(load('knok-format') || '24', false);
+        scheduleTick();
+    }
+
+    // Pause while the tab is hidden; resync the moment it comes back
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+            stopTick();
+        } else {
+            updateClock();
+            scheduleTick();
+        }
+    });
+
+    document.addEventListener('DOMContentLoaded', init);
+</script>
+
+</body>
+</html>

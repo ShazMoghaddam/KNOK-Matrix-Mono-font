@@ -1,0 +1,24 @@
+{
+  "name": "knok-matrix",
+  "version": "1.2.0",
+  "private": true,
+  "description": "Ten digits built from pure geometric SVG, shown as a design index and a live clock.",
+  "author": "Shaz Moghaddam (https://shazmoghaddam.github.io/)",
+  "license": "MIT",
+  "homepage": "https://shazmoghaddam.github.io/knok-matrix/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ShazMoghaddam/knok-matrix.git"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test tests/smoke.mjs",
+    "build:assets": "node assets/build.mjs"
+  },
+  "devDependencies": {
+    "playwright": "1.65.1"
+  }
+}

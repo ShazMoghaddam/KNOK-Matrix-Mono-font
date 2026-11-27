@@ -1,121 +1,81 @@
+<p align="center">
+  <a href="https://shazmoghaddam.github.io/knok-matrix/">
+    <img src="assets/banner.png" alt="KNOK Matrix / Mono: ten digits drawn from circles, rectangles and polygons, shown as a live clock reading 10:24 in the Studio Light theme." width="100%">
+  </a>
+</p>
+
 # KNOK Matrix / Mono
 
-**An abstract typographic layout engine and real-time digital system clock built from pure geometric SVG.**
+[![Check](https://github.com/ShazMoghaddam/knok-matrix/actions/workflows/ci.yml/badge.svg)](https://github.com/ShazMoghaddam/knok-matrix/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Version](https://img.shields.io/badge/version-1.2.0-2845D6)](CHANGELOG.md)
+[![Live demo](https://img.shields.io/badge/demo-live-2FA084)](https://shazmoghaddam.github.io/knok-matrix/)
+![Dependencies](https://img.shields.io/badge/dependencies-none-FF4B91)
 
-[![Live Demo](https://img.shields.io/badge/demo-online-brightgreen)](https://shazmoghaddam.github.io/)
-[![Version](https://img.shields.io/badge/version-1.1.0-blue)](#)
-[![Licence: MIT](https://img.shields.io/badge/Licence-MIT-lightgrey.svg)](./LICENSE)
+Ten digits, each drawn by hand from SVG circles, rectangles and polygons. The same glyphs power a design index and a live clock, in one HTML file with no libraries.
 
-[🔗 LinkedIn](https://www.linkedin.com/in/shazmoghaddam/) &nbsp;|&nbsp; [🌐 Portfolio](https://shazmoghaddam.github.io/)
+**[Open the live demo →](https://shazmoghaddam.github.io/knok-matrix/)**
 
----
+**Contents:** [Features](#features) · [Screenshots](#screenshots) · [How it works](#how-it-works) · [Colour palette](#colour-palette) · [Accessibility](#accessibility) · [Run it](#run-it) · [Layout](#layout)
 
-<!-- Add a screenshot here once hosted -->
-<!-- ![KNOK Matrix preview](./preview.png) -->
+## Features
 
-## What is it?
+- **Ten hand-made glyphs.** Every digit is a small composition of primitive shapes in a 500 × 700 grid. No fonts, no images, no canvas.
+- **Live clock.** Ticks on the real second boundary, so it never drifts behind your system clock. Choose **24h** or **12h** (with AM/PM). Your choice is remembered.
+- **Two themes.** *Studio Light* mixes colours like ink on paper. *Gallery Dark* mixes them like light from a projector. It follows your device's theme until you pick one.
+- **Works everywhere.** Tested at 320 px phones up to wide desktops, with keyboard support and screen-reader text.
+- **One file.** Open `index.html` in any modern browser. No build step.
 
-**KNOK Matrix / Mono** is a single-file, zero-dependency typographic system where digits 0–9 are rendered as hand-composed geometric SVG artworks. Each glyph (`KNOK_0` through `KNOK_9`) is built entirely from primitive SVG shapes — `<path>`, `<rect>`, `<circle>`, `<polygon>` — layered with CSS blend modes to produce optical depth and colour interaction.
+## Screenshots
 
-The same ten glyphs power two things simultaneously:
+<table>
+  <tr>
+    <td width="66%"><img src="assets/screenshots/desktop-light.png" alt="Desktop, Studio Light theme: the title, theme and clock-format switches, the live clock and the first row of glyphs."></td>
+    <td width="34%" rowspan="2"><img src="assets/screenshots/phone-dark.png" alt="Phone, Gallery Dark theme: the clock and two columns of glyphs fit the narrow screen."></td>
+  </tr>
+  <tr>
+    <td><img src="assets/screenshots/desktop-dark.png" alt="Desktop, Gallery Dark theme: the same glyphs, with colours that brighten where they overlap."></td>
+  </tr>
+</table>
 
-- a **static design index** displaying all ten artworks in a responsive grid
-- a **live clock** that reads the system time every second and swaps the correct SVG into each digit position
+## How it works
 
-No images. No canvas. No libraries. One HTML file.
+### One glyph store, two views
 
----
+All ten glyphs live in a single `<template id="digit-templates">`. The browser never renders a template, so it works as an inert asset store. On load, each glyph is cloned with `cloneNode(true)` into the design index and, as the time changes, into the clock. One definition per glyph, no duplication.
 
-## Architecture
+### Blend modes do the colour mixing
 
-### SVG glyph system — `<template>` pattern
-
-Every glyph lives inside a single `<template id="digit-templates">` element. The `<template>` tag is never rendered by the browser — it acts as an inert asset store. On load, `initSystem()` queries all ten `.art-digit` SVGs from the template's document fragment and uses `cloneNode(true)` to stamp copies into:
-
-- each `.art-digit-wrapper[data-digit]` cell in the static index grid
-- each `.clock-digit-box` slot in the live clock display
-
-One authoritative definition per glyph, two views, zero duplication, zero extra DOM weight.
-
-### Blend mode colour system
-
-All SVG shape elements carry `mix-blend-mode: var(--blend-mode)`. The value switches with the active theme:
+Every shape uses `mix-blend-mode: var(--blend-mode)`, and each theme sets that variable:
 
 | Theme | Mode | Effect |
 |---|---|---|
-| **Studio Light** (light bg) | `multiply` | Colours deepen and darken where shapes overlap — ink on paper |
-| **Gallery Dark** (dark bg) | `screen` | Colours brighten and glow where shapes overlap — light on a projector |
+| **Studio Light** | `multiply` | Overlaps get darker, like ink on paper |
+| **Gallery Dark** | `screen` | Overlaps get brighter, like light on a wall |
 
-The same SVG geometry produces two visually distinct results in each mode — no artwork changes required.
+The geometry never changes. Only one CSS variable does.
 
-### The `.knockout` technique
+### Knockouts
 
-Several glyphs (0, 6, 7, 8, 9) contain ring shapes built from two overlapping filled shapes: a larger coloured shape and a smaller inner shape marked `class="knockout"`. The knockout class forces:
-
-```css
-.art-digit .knockout {
-    mix-blend-mode: normal !important;
-    opacity: 1 !important;
-    fill: var(--bg-canvas) !important;
-    transition: fill 0.4s ease;
-}
-```
-
-`fill: var(--bg-canvas)` paints the inner shape with the exact background colour, punching a clean hole through the layer beneath. Because it references the CSS variable directly, the cutout automatically adapts when the theme switches — no JavaScript required.
-
-### Theme switching — `data-theme` attribute
-
-Themes are controlled by a single `data-theme` attribute on `<html>`. Setting `data-theme="neon"` activates the dark palette via a CSS attribute selector:
+The rings in 0, 6, 8 and 9 are a filled shape with a smaller shape on top marked `class="knockout"`. A knockout is painted in the exact colour of the surface underneath:
 
 ```css
-[data-theme="neon"] {
-    --bg-canvas: #0b0c10;
-    --blend-mode: screen;
-    /* ... */
-}
+.digit-card       { --knockout: var(--surface); }
+.clock-digit-box  { --knockout: var(--surface-sunk); }
+.art-digit .knockout { fill: var(--knockout) !important; mix-blend-mode: normal !important; }
 ```
 
-Removing the attribute reverts to the default light theme. No class toggling, no JavaScript colour assignments — the cascade handles everything.
+Each container sets its own `--knockout`, so a hole matches its card or clock box exactly, in both themes, with no JavaScript.
 
-### Live clock — `syncSlot` diff optimisation
+### A clock that only touches what changed
 
-The clock ticks on a `1000ms` interval. Rather than re-rendering all six digit slots on every tick, `syncSlot()` compares the incoming digit character against a cached value map. A DOM update only fires when the value has actually changed:
+`drawSlot()` keeps the last value drawn in each of the six slots and only replaces an SVG when its digit changes. The hours slot can go 60 minutes without a single DOM update. The tick is scheduled for the start of each second, and it pauses while the tab is hidden, then resyncs the moment you come back.
 
-```js
-function syncSlot(slotId, digitValue) {
-    if (currentClockStrings[slotId] !== digitValue) {
-        currentClockStrings[slotId] = digitValue;
-        const container = document.getElementById(slotId);
-        container.innerHTML = '';
-        container.appendChild(svgTemplates[parseInt(digitValue, 10)].cloneNode(true));
-    }
-}
-```
+### Themes without a flash
 
-In practice the hours slot may not change for 60 minutes. The diff check keeps DOM mutations to the strict minimum.
-
-### Visibility-aware interval
-
-The clock interval is stored and managed via the `visibilitychange` API:
-
-```js
-document.addEventListener('visibilitychange', () => {
-    if (document.hidden) {
-        clearInterval(clockInterval);
-    } else {
-        updateClock();
-        clockInterval = setInterval(updateClock, 1000);
-    }
-});
-```
-
-When the tab is hidden the interval is cleared. When it returns to focus the clock syncs immediately before the new interval starts.
-
----
+A few lines in `<head>` read your saved theme (or your device's) and set `data-theme` before the page paints, so dark mode never flashes white first.
 
 ## Colour palette
-
-All 11 colours are defined as CSS custom properties on `:root` and remapped to semantic slot variables (`--c1` through `--c7`) per theme. Slot assignments differ between themes so the same geometry reads differently in light vs dark context.
 
 | Variable | Name | Hex |
 |---|---|---|
@@ -131,72 +91,47 @@ All 11 colours are defined as CSS custom properties on `:root` and remapped to s
 | `--color-safetyorange` | Safety Orange | `#FF6500` |
 | `--color-hotpink` | Hot Pink | `#FF4B91` |
 
----
-
-## Responsive behaviour
-
-| Breakpoint | Grid layout |
-|---|---|
-| > 950px | 5 columns (full index) |
-| ≤ 950px | 3 columns |
-| ≤ 600px | 2 columns |
-
-Clock separator dots and digit box sizing compress proportionally on small viewports.
-
----
+Each theme maps these to seven slot colours (`--c1` to `--c7`) in a different order, so the same shapes read differently in light and dark.
 
 ## Accessibility
 
-- Live clock announced to screen readers via a visually-hidden `aria-live="polite"` element
-- Theme buttons expose active state via `aria-pressed`
-- All SVG glyphs carry `role="img"` and `aria-label`
-- Decorative clock separators marked `aria-hidden="true"`
-- `prefers-reduced-motion` disables the pulsing dot animation
-- `<main>` landmark wraps primary content; `<nav>` wraps footer links
-- Controls grouped with `role="group"` and `aria-label`
+- Each glyph has `role="img"` and a label. The clock's visual digits are hidden from screen readers, which get a plain text time instead.
+- That time text updates once a minute and is **not** a live region, so a screen reader is never interrupted every second.
+- Theme and clock-format buttons are real buttons with `aria-pressed`, and every control shows a clear focus ring.
+- `prefers-reduced-motion` stops the pulsing dots and the card hover lift.
+- Text meets WCAG AA contrast in both themes.
 
----
+## Run it
 
-## Project structure
+Open `index.html` in a browser. That's it.
 
-```
-KNOK_MATRIX___MONO.html   ← entire system in one file
-README.md
-LICENSE
-```
-
-No build step. No package manager. No dependencies.
-
----
-
-## Getting started
+To run the tests or rebuild the images, you need Node 20 or later:
 
 ```bash
-git clone https://github.com/shazmoghaddam/knok-matrix.git
-cd knok-matrix
-open KNOK_MATRIX___MONO.html
+npm install
+npx playwright install chromium
+npm test                 # smoke tests at 320, 390, 768, 1024 and 1440 px
+npm run build:assets     # banner, social preview and screenshots
 ```
 
-Or download the `.html` file and open it directly in any modern browser.
-
----
-
-## Stack
+## Layout
 
 ```
-HTML5      — template element, semantic landmarks, SVG primitives
-CSS3       — custom properties, mix-blend-mode, attribute selectors, transitions
-JS ES6     — cloneNode, setInterval, visibilitychange, string diffing
+index.html            the whole project: markup, styles, glyphs and script
+assets/
+  banner.png          README banner
+  social-preview.png  GitHub social preview (Settings > Social preview)
+  screenshots/        README screenshots
+  build.mjs           builds all of the above from index.html
+scripts/serve.mjs     tiny static server used by the build and tests
+tests/smoke.mjs       headless browser tests, run in CI
 ```
-
----
 
 ## Licence
 
-Released under the [MIT licence](./LICENSE). Free to use, change and share, including commercially, as long as the licence and copyright notice stay with it.
+[MIT](LICENSE)
 
 ---
 
-*No libraries · No frameworks · No build step · One file*
-
-**Shaz Moghaddam** · Data Science · Machine Learning · App Development · London, UK
+Created by **Shaz Moghaddam** · London  
+[Website](https://shazmoghaddam.github.io/) · [LinkedIn](https://www.linkedin.com/in/shazmoghaddam/)
